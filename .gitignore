@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+# TODO: move build output to a different directory and ignore it
+ChatApp 
