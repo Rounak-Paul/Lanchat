@@ -29,7 +29,7 @@
 
 class Lan {
 public:
-    std::map<std::string, std::string> peers;
+    std::map<std::string, std::chrono::steady_clock::time_point> peers;
     std::mutex peer_mutex;
     bool running = true;
 
@@ -91,7 +91,7 @@ public:
                     buffer[len] = '\0';
                     std::string ip = inet_ntoa(sender.sin_addr);
                     std::lock_guard<std::mutex> lock(peer_mutex);
-                    peers[ip] = "LAN Peer";
+                    peers[ip] = std::chrono::steady_clock::now();
                 }
             }
 
@@ -147,5 +147,25 @@ public:
         }
 
         close_socket(sock);
+    }
+
+    void start_peer_cleanup_thread(int timeout_seconds = 6) {
+        Thread::run([&, timeout_seconds]() {
+            while (running) {
+                {
+                    std::lock_guard<std::mutex> lock(peer_mutex);
+                    auto now = std::chrono::steady_clock::now();
+                    for (auto it = peers.begin(); it != peers.end(); ) {
+                        if (std::chrono::duration_cast<std::chrono::seconds>(now - it->second).count() > timeout_seconds) {
+                            std::cout << "Removing inactive peer: " << it->first << "\n";
+                            it = peers.erase(it);
+                        } else {
+                            ++it;
+                        }
+                    }
+                }
+                Thread::sleep_ms(2000);
+            }
+        });
     }
 };

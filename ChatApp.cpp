@@ -11,6 +11,7 @@ int main() {
     lan.start_udp_broadcast();
     lan.start_udp_listener();
     lan.start_tcp_listener();
+    lan.start_peer_cleanup_thread();
 
     while (lan.running) {
         std::cout << "\n--- LAN Chat ---\n";
